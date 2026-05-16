@@ -396,7 +396,7 @@ export default function KartuPesertaPage() {
                       
                       {/* QR CODE */}
                       <div className='qr-wrapper'>
-                        <QRCodeCanvas value={`https://sdn2cipari.sch.id/verifikasi/${item.nisn || '000'}`} size={64} />
+                        <QRCodeCanvas value={`https://sdn2ciparitsk.vercel.app/verifikasi/${item.nisn}`} size={64} />
                       </div>
 
                       {/* DATA SISWA */}
