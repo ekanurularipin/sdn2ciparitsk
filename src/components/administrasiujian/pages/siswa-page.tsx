@@ -384,7 +384,7 @@ export default function SiswaPage() {
                 <th style={{ padding: '12px', fontWeight: '600', color: '#374151' }}>No Peserta</th>
                 <th style={{ padding: '12px', fontWeight: '600', color: '#374151' }}>Kelas</th>
                 <th style={{ padding: '12px', fontWeight: '600', color: '#374151' }}>Ruangan</th>
-                <th style={{ padding: '12px', fontWeight: '600', color: '#374151', textBreak: 'keep-all' }}>Aksi</th>
+                <th style={{ padding: '12px', fontWeight: '600', color: '#374151', wordBreak: 'break-all' }}>Aksi</th>
               </tr>
             </thead>
 
