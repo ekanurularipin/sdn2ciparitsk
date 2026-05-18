@@ -10,6 +10,7 @@ import VerifikasiPesertaPage from './components/administrasiujian/pages/verifika
 import LandingPage from './components/web/app.tsx' 
 import LoginPage from './components/auth/login.tsx' 
 import AbsenPage from './components/absensi/pages/absen.tsx' // 🌟 1. IMPORT FILE ABSEN KAMU DI SINI
+import ProtectedRoute from './components/auth/ProtectedRoute'
 
 // Catatan: Pastikan path import di atas sesuai dengan lokasi file AbsenPage kamu. 
 // Jika nama filenya 'absen-page.tsx', gunakan huruf kecil sesuai nama file aslinya.
@@ -28,7 +29,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path='/absen' element={<AbsenPage />} />
 
         {/* 3. HALAMAN DASHBOARD / ADMIN */}
-        <Route path='/admin/*' element={<App />} />
+        <Route
+  path='/admin/*'
+  element={
+    <ProtectedRoute>
+      <App />
+    </ProtectedRoute>
+  }
+/>
 
         {/* 4. HALAMAN VERIFIKASI QR */}
         <Route path='/verifikasi/:nisn' element={<VerifikasiPesertaPage />} />
