@@ -101,13 +101,43 @@ const [kepalaSekolah] =
 
   const [loading, setLoading] =
     useState<boolean>(false)
-
+const [toast, setToast] = useState<{
+  type: 'success' | 'error' | 'warning'
+  message: string
+  show: boolean
+}>({
+  type: 'success',
+  message: '',
+  show: false,
+})
   const inputRef =
     useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
+  const showToast = (
+  type: 'success' | 'error' | 'warning',
+  message: string,
+  sound?: string
+) => {
+  setToast({
+    type,
+    message,
+    show: true,
+  })
+
+  // 🔊 AUDIO langsung bareng popup
+  if (sound) {
+    const audio = new Audio(sound)
+    audio.play().catch(() => {})
+  }
+
+  // ⏱ auto close
+  setTimeout(() => {
+    setToast((prev) => ({ ...prev, show: false }))
+  }, 2500)
+}
 
   // ================= FETCH SISWA =================
   useEffect(() => {
@@ -167,116 +197,168 @@ const [kepalaSekolah] =
   }, [attendance])
 
   // ================= HANDLE SCAN =================
-  const handleScan = async (
-    rawValue: string
-  ) => {
-    if (!rawValue || loading) return
+  // ================= HANDLE SCAN =================
+const handleScan = async (
+  rawValue: string
+) => {
+  // ================= CEGAH DOUBLE SCAN CEPAT =================
+  if (
+    !rawValue ||
+    loading ||
+    rawValue === scanNisn
+  )
+    return
 
-    setLoading(true)
+  setLoading(true)
 
-    try {
-      const cleanNisn = String(rawValue)
-        .replace('NISN:', '')
-        .split('/')
-        .pop()
-        ?.trim()
+  try {
+    // ================= BERSIHKAN NISN =================
+    const cleanNisn = String(rawValue)
+      .replace('NISN:', '')
+      .split('/')
+      .pop()
+      ?.trim()
 
-      if (!cleanNisn) {
-        setLoading(false)
-        return
-      }
+    if (!cleanNisn) {
+      setLoading(false)
 
-      const student = students.find(
-        (s) =>
-          String(s.nisn).trim() ===
-          cleanNisn
+      return
+    }
+
+    // ================= SET INPUT =================
+    setScanNisn(cleanNisn)
+
+    // ================= CARI SISWA =================
+    const student = students.find(
+      (s) =>
+        String(s.nisn).trim() ===
+        cleanNisn
+    )
+
+    // ================= SISWA TIDAK DITEMUKAN =================
+    if (!student) {
+      showToast('error', 'NISN tidak ditemukan', '/failed.mp3')
+
+      setLoading(false)
+
+      return
+    }
+
+    // ================= VALIDASI DOUBLE ABSEN =================
+    const { data: existing } =
+      await supabase
+        .from('absensi')
+        .select('id')
+        .eq('nisn', student.nisn)
+        .maybeSingle()
+
+    // ================= SUDAH ABSEN =================
+    if (existing) {
+      showToast(
+  'warning',
+  `${student.nama} sudah absen`,
+  '/failed.mp3'
+)
+
+      // suara gagal
+      const audioFail = new Audio(
+        '/failed.mp3'
       )
 
-      if (!student) {
-        alert('NISN tidak ditemukan')
+      audioFail.play()
 
-        setLoading(false)
-        return
-      }
+      setLoading(false)
 
-     
+      return
+    }
 
-      const { data: existing } =
-        await supabase
-          .from('absensi')
-          .select('*')
-          .eq('nisn', student.nisn)
-          .maybeSingle()
+    // ================= JAM ABSEN =================
+    const waktu =
+      new Date().toLocaleTimeString(
+        'id-ID'
+      )
 
-      if (existing) {
-        alert(
-          'Siswa sudah absen'
-        )
-
-        setLoading(false)
-        return
-      }
-
-      const waktu =
-        new Date().toLocaleTimeString(
-          'id-ID'
-        )
-
-      // ================= INSERT DATABASE =================
-      const { error } = await supabase
-        .from('absensi')
-        .insert([
-          {
-            nisn: student.nisn,
-            nama: student.nama,
-            kelas: student.kelas,
-            jam_absen: waktu,
-            status: 'Hadir',
-          },
-        ])
-
-      if (error) {
-        console.error(error)
-
-        alert(
-          `Gagal simpan absensi: ${error.message}`
-        )
-
-        setLoading(false)
-        return
-      }
-
-      // ================= UPDATE UI =================
-      const newAttendance: Attendance =
+    // ================= INSERT DATABASE =================
+    const { error } = await supabase
+      .from('absensi')
+      .insert([
         {
           nisn: student.nisn,
           nama: student.nama,
           kelas: student.kelas,
-          waktu,
+          jam_absen: waktu,
           status: 'Hadir',
-        }
-
-      setAttendance((prev) => [
-        newAttendance,
-        ...prev,
+        },
       ])
 
-      setScanNisn('')
+    // ================= GAGAL INSERT =================
+    if (error) {
+      console.error(error)
 
-      // ================= SUARA SUCCESS =================
-      const audio = new Audio(
-        '/success.mp3'
+      showToast('error', error.message, '/failed.mp3')
+
+      // suara gagal
+      const audioFail = new Audio(
+        '/failed.mp3'
       )
 
-      audio.play()
-    } catch (err) {
-      console.error(err)
+      audioFail.play()
 
-      alert('Terjadi kesalahan')
+      setLoading(false)
+
+      return
     }
 
-    setLoading(false)
+    // ================= UPDATE UI =================
+    const newAttendance: Attendance =
+      {
+        nisn: student.nisn,
+        nama: student.nama,
+        kelas: student.kelas,
+        waktu,
+        status: 'Hadir',
+      }
+
+    setAttendance((prev) => [
+      newAttendance,
+      ...prev,
+    ])
+
+    // ================= POPUP BERHASIL =================
+    showToast(
+  'success',
+  `Absensi berhasil\n${student.nama} - ${student.kelas}`,
+  '/success.mp3'
+)
+
+    // ================= SUARA SUCCESS =================
+    const audio = new Audio(
+      '/success.mp3'
+    )
+
+    audio.play()
+
+    // ================= RESET INPUT =================
+    setTimeout(() => {
+      setScanNisn('')
+    }, 1000)
+  } catch (err) {
+    console.error(err)
+
+    alert(
+      '❌ Terjadi kesalahan sistem'
+    )
+
+    // suara gagal
+    const audioFail = new Audio(
+      '/failed.mp3'
+    )
+
+    audioFail.play()
   }
+
+  setLoading(false)
+}
 
   return (
     <div className='p-6 space-y-6 print:p-0'>
@@ -459,24 +541,24 @@ const [kepalaSekolah] =
       <div id='print-area'>
         <div className='text-center mb-6 hidden print:block'>
           <h2 className='text-2xl font-bold'>
-            DAFTAR HADIR PESERTA UJIAN
+            DAFTAR HADIR
+          </h2>
+          <h2 className='text-2xl font-bold'>
+            PESERTA ASESMEN SUMATIF AKHIR JENJANG
+          </h2>
+          <h2 className='text-2xl font-bold'>
+            SDN 2 CIPARI
           </h2>
 
-          <p>
-            Mata Pelajaran: {mapel}
-          </p>
-
-          <p>
-            Kelas: {kelas}
-          </p>
-
-          <p>
-            Tanggal: {tanggal}
-          </p>
-
-          <p>
-            Ruangan: {selectedRuangan}
-          </p>
+          <div className="flex flex-row justify-center items-center gap-6 mt-4 text-sm font-medium">
+            <p>Mata Pelajaran: <span className="font-semibold">{mapel}</span></p>
+            <span className="text-gray-400">|</span>
+            <p>Kelas: <span className="font-semibold">{kelas}</span></p>
+            <span className="text-gray-400">|</span>
+            <p>Tanggal: <span className="font-semibold">{tanggal}</span></p>
+            <span className="text-gray-400">|</span>
+            <p>Ruangan: <span className="font-semibold">{selectedRuangan}</span></p>
+          </div>
         </div>
 
         <div className='overflow-x-auto'>
@@ -555,32 +637,53 @@ const [kepalaSekolah] =
         </div>
 
         {/* TTD */}
-        <div className='grid grid-cols-2 gap-10 pt-16'>
-          <div className='text-center'>
-            <p>Pengawas</p>
+<div className="mt-20 px-10 print:px-0">
+  <div className="flex justify-between items-start gap-20">
 
-            <div className='h-24'></div>
+    {/* KIRI - PENGAWAS */}
+    <div className="text-center w-1/2">
+      <p className="font-medium">Pengawas</p>
 
-            <hr />
+      <div className="h-28"></div>
 
-            <p className='font-semibold mt-2'>
-              {pengawas}
-            </p>
-          </div>
+      <div className="border-t border-black w-3/5 mx-auto"></div>
 
-          <div className='text-center'>
-            <p>Kepala Sekolah</p>
+      <p className="font-semibold mt-2">
+        {pengawas}
+      </p>
+    </div>
 
-            <div className='h-24'></div>
+    {/* KANAN - KEPALA SEKOLAH */}
+    <div className="text-center w-1/2">
+      <p className="font-medium">Kepala Sekolah</p>
 
-            <hr />
+      <div className="h-28"></div>
 
-            <p className='font-semibold mt-2'>
-              {kepalaSekolah}
-            </p>
-          </div>
-        </div>
+      <div className="border-t border-black w-3/5 mx-auto"></div>
+
+      <p className="font-semibold mt-2">
+        {kepalaSekolah}
+      </p>
+    </div>
+
+  </div>
+</div>
       </div>
+      {toast.show && (
+  <div className="fixed top-5 right-5 z-50">
+    <div
+      className={`px-4 py-3 rounded-xl shadow-lg text-white min-w-[250px] ${
+        toast.type === 'success'
+          ? 'bg-green-600'
+          : toast.type === 'error'
+          ? 'bg-red-600'
+          : 'bg-yellow-500'
+      }`}
+    >
+      {toast.message}
+    </div>
+  </div>
+)}
     </div>
   )
 }
