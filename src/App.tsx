@@ -16,6 +16,9 @@ import {
 // IMPORT HALAMAN ASLI KAMU
 import SiswaPage from './components/administrasiujian/pages/siswa-page'
 import KartuPeserta from './components/administrasiujian/pages/kartu-peserta-page'
+import NomorMeja from './components/administrasiujian/pages/nomor-meja'
+import NomorMeja2 from './components/ujian-kelas1-5/pages/nomor-meja'
+import DataNomorPeserta from './components/administrasiujian/pages/data-nomor-peserta'
 
 function App() {
   const [activeMenu, setActiveMenu] = useState<string>('dashboard')
@@ -29,6 +32,9 @@ function App() {
       case 'print': return 'Print Dokumen'
       case 'admin-siswa': return 'Administrasi Ujian - Siswa'
       case 'kartu-peserta': return 'Kartu Peserta'
+      case 'nomor-meja': return 'Nomor Meja'
+      case 'nomor-meja2': return 'Nomor Meja'
+      case 'data-nomor-peserta': return 'Data Nomor Peserta'
       case 'barcode': return 'Barcode'
       case 'pengaturan': return 'Pengaturan'
       default: return 'Dashboard'
@@ -219,6 +225,9 @@ function App() {
             {/* 2. HALAMAN DARI FILE LUAR */}
             {activeMenu === 'admin-siswa' && <SiswaPage />}
             {activeMenu === 'kartu-peserta' && <KartuPeserta />}
+            {activeMenu === 'nomor-meja' && <NomorMeja />}
+            {activeMenu === 'nomor-meja2' && <NomorMeja2 />}
+            {activeMenu === 'data-nomor-peserta' && <DataNomorPeserta />}
 
             {/* 3. PLACEHOLDER UNTUK MENU YANG BELUM ADA FILE-NYA */}
             {!['dashboard', 'admin-siswa', 'kartu-peserta'].includes(activeMenu) && (
@@ -295,6 +304,21 @@ function DropdownMenu({
           text="Absensi" 
           active={activeMenu === 'absensi-ujian'} 
           onClick={() => setActiveMenu('absensi-ujian')} 
+        />
+        <SubMenuItem 
+          text="Data Siswa Kelas 1 - 5" 
+          active={activeMenu === 'nomor-meja'} 
+          onClick={() => setActiveMenu('nomor-meja')} 
+        />
+        <SubMenuItem 
+          text="Nomor Meja" 
+          active={activeMenu === 'nomor-meja2'} 
+          onClick={() => setActiveMenu('nomor-meja2')} 
+        />
+        <SubMenuItem 
+          text="Data Nomor Peserta" 
+          active={activeMenu === 'data-nomor-peserta'} 
+          onClick={() => setActiveMenu('data-nomor-peserta')} 
         />
       </div>
     </details>

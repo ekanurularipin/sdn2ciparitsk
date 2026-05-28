@@ -9,7 +9,7 @@ import {
 import { supabase } from '../../lib/supabase'
 
 import '@tabler/core/dist/css/tabler.min.css'
-import 'tailwindcss'
+// import 'tailwindcss'
 
 export default function LoginPage() {
   const navigate = useNavigate()

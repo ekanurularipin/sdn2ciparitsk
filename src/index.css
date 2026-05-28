@@ -1,11 +1,8 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-  --color-brand-blue: #0052cc;
-  --color-brand-dark: #003366;
-  --color-brand-orange: #ff9900;
-}
-@media print {
+/* @media print {
   body * {
     visibility: hidden;
   }
@@ -21,4 +18,9 @@
     top: 0;
     width: 100%;
   }
-}
+
+  .paper {
+    box-shadow: none !important;
+    margin: 0 auto !important;
+  }
+} */
